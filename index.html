@@ -9,9 +9,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons UMD build for browser support -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <!-- Three.js for 3D Simulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         /* Mobile safe area for fixed bottom bar */
         body { padding-bottom: 120px; }
+        /* 3D Canvas Container */
+        #threeContainer {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem; /* rounded-xl */
+        }
     </style>
 </head>
 <body class="bg-gray-50 font-sans select-none">
@@ -107,7 +117,7 @@
                         </div>
                     </div>
 
-                    <!-- Graph 3: Relative Velocity (New) -->
+                    <!-- Graph 3: Relative Velocity -->
                     <div class="bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm p-4 relative">
                         <div class="mb-2 inline-block bg-indigo-100/90 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 border border-indigo-200 shadow-sm">
                             입자 확대 및 실제 속도 (기준 입자 추적)
@@ -115,6 +125,17 @@
                         <canvas id="relativeCanvas" class="w-full h-[150px] bg-transparent rounded-lg"></canvas>
                         <div class="mt-2 text-xs text-indigo-600 text-center">
                             * 가운데 붉은 입자를 따라가며, 세 입자의 <strong>실제 속도</strong>를 화살표로 보여줍니다.
+                        </div>
+                    </div>
+
+                    <!-- Graph 4: 3D Visualization (New) -->
+                    <div class="bg-gray-900 rounded-xl border border-gray-800 shadow-sm p-1 relative overflow-hidden">
+                        <div class="absolute top-4 left-4 bg-gray-800/80 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 border border-gray-700 shadow-sm z-10 pointer-events-none">
+                            3D 입자 모형 (마우스 드래그로 회전 가능)
+                        </div>
+                        <div id="threeContainer"></div>
+                        <div class="text-xs text-gray-400 text-center p-2">
+                            * 45도 각도에서 본 실제 공기 기둥의 파동 모습입니다. (랜덤한 열운동은 생략됨)
                         </div>
                     </div>
 
@@ -193,8 +214,15 @@
         const ampValue = document.getElementById('ampValue');
         const waveCanvas = document.getElementById('waveCanvas');
         const particleCanvas = document.getElementById('particleCanvas');
-        const relativeCanvas = document.getElementById('relativeCanvas'); // New
+        const relativeCanvas = document.getElementById('relativeCanvas');
+        const threeContainer = document.getElementById('threeContainer');
         
+        // --- Three.js Variables ---
+        let scene, camera, renderer;
+        let particlesSystem;
+        let initialParticlePositions = [];
+        let isThreeInitialized = false;
+
         // --- Resize Handling ---
         function resizeCanvas() {
             const waveContainer = waveCanvas.parentElement;
@@ -209,9 +237,19 @@
 
             relativeCanvas.width = relativeContainer.clientWidth;
             relativeCanvas.height = 150;
+
+            // Resize Three.js
+            if (isThreeInitialized && renderer && camera) {
+                const width = threeContainer.clientWidth;
+                const height = threeContainer.clientHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+            }
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        // Call resize initially and after a slight delay to ensure container layout is done
+        setTimeout(resizeCanvas, 100);
 
         // --- Logic ---
 
@@ -333,62 +371,202 @@
 
         // --- New Physics Observation Buttons Logic ---
         function snapToPhase(targetType) {
-            // Target the specific particle that shows the arrow (Row 0, Col ~Middle)
             const width = particleCanvas.width;
             const cols = Math.floor(width / 15);
             const targetCol = Math.floor(cols / 2);
             const spacingX = width / cols;
-            // The particle's base position x
             const targetX = targetCol * spacingX;
             
             const k = 0.01 * (frequency / 200);
             
-            // Formula: y = sin(kx - phase)
-            // velocity ~ -cos(kx - phase)
-            // angle = kx - phase
-            
             if (targetType === 'velocityZero') {
-                // Velocity 0 means Displacement Max or Min
-                // cos(angle) = 0 => angle = PI/2 or 3PI/2
-                // kx - phase = PI/2
-                // phase = kx - PI/2
                 phase = targetX * k - Math.PI / 2;
             } else if (targetType === 'velocityMax') {
-                // Velocity Max means Displacement 0
-                // cos(angle) = 1 or -1 => angle = 0 or PI
-                // kx - phase = 0
-                // phase = kx
                 phase = targetX * k;
             }
 
             isAnimating = false;
             updateAnimButtonState();
-            // REMOVED draw(); -> The main loop is always running, so updating 'phase' is enough.
-            // Calling draw() here creates a duplicate animation loop, doubling the speed.
         }
 
         document.getElementById('btnVelZero').addEventListener('click', () => snapToPhase('velocityZero'));
         document.getElementById('btnVelMax').addEventListener('click', () => snapToPhase('velocityMax'));
 
         document.getElementById('btnStep').addEventListener('click', () => {
-            // Modified: Just update phase. Do not toggle animation state or call draw().
-            // If playing, it skips a bit. If paused, it steps forward.
-            phase += Math.PI / 25; // 2 * PI / 50 = 1/50 period
-            
-            // REMOVED: if (!isAnimating) { draw(); } 
-            // The draw loop runs continuously regardless of isAnimating flag.
+            phase += Math.PI / 25; 
+            if (!isAnimating) {
+                draw(); // Update both 2D and 3D
+            }
         });
 
 
         // --- Helper Function for Wave Calculation ---
         function getWaveY(waveType, angle) { 
-             return Math.sin(angle); // Always sine
+             return Math.sin(angle); 
         }
 
-        // Calculate velocity factor proportional to -d(Displacement)/d(angle)
         function getWaveVelocityFactor(waveType, angle) {
-            return -Math.cos(angle); // Always sine derivative
+            return -Math.cos(angle); 
         }
+
+        // --- Three.js Initialization ---
+        function initThree() {
+            if (isThreeInitialized) return;
+            
+            const width = threeContainer.clientWidth;
+            const height = threeContainer.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111827); // gray-900
+
+            camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+            camera.position.set(0, 15, 25);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            threeContainer.appendChild(renderer.domElement);
+
+            // Create Particles
+            const particleCount = 2000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            const cylinderLength = 40;
+            const cylinderRadius = 5;
+
+            // Generate particles
+            for (let i = 0; i < particleCount; i++) {
+                // Random position in a cylinder
+                const x = (Math.random() - 0.5) * cylinderLength;
+                
+                // Random position in circle for Y, Z
+                const r = Math.sqrt(Math.random()) * cylinderRadius;
+                const theta = Math.random() * 2 * Math.PI;
+                const y = r * Math.cos(theta);
+                const z = r * Math.sin(theta);
+
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+
+                // Save initial X for wave calculation
+                initialParticlePositions.push({x: x, y: y, z: z});
+
+                // Color based on position (gradient)
+                const color = new THREE.Color();
+                // Simple color gradient
+                color.setHSL(0.5 + x/cylinderLength * 0.2, 0.8, 0.6);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // Material
+            // Create a soft circle texture programmatically
+            const canvas = document.createElement('canvas');
+            canvas.width = 32;
+            canvas.height = 32;
+            const context = canvas.getContext('2d');
+            const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, 32, 32);
+            const texture = new THREE.CanvasTexture(canvas);
+
+            const material = new THREE.PointsMaterial({ 
+                size: 0.8, 
+                vertexColors: true, 
+                map: texture, 
+                transparent: true,
+                alphaTest: 0.1,
+                opacity: 0.9
+            });
+
+            particlesSystem = new THREE.Points(geometry, material);
+            scene.add(particlesSystem);
+
+            // Simple Orbit Controls (Manual implementation for lightness)
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            threeContainer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+            });
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            threeContainer.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaMove = {
+                        x: e.offsetX - previousMousePosition.x,
+                        y: e.offsetY - previousMousePosition.y
+                    };
+
+                    const rotationSpeed = 0.005;
+                    const group = scene; 
+                    // Rotate the whole scene or camera orbit
+                    // Simply rotating the particle system for effect
+                    particlesSystem.rotation.y += deltaMove.x * rotationSpeed;
+                    particlesSystem.rotation.x += deltaMove.y * rotationSpeed;
+                }
+                previousMousePosition = {
+                    x: e.offsetX,
+                    y: e.offsetY
+                };
+            });
+
+            isThreeInitialized = true;
+        }
+
+        // --- 3D Update Function ---
+        function updateThree() {
+            if (!isThreeInitialized || !particlesSystem) return;
+
+            const positions = particlesSystem.geometry.attributes.position.array;
+            
+            // Map Frequency to Wave Number k
+            // Visual scale factor to match 2D graph
+            const visualScaleFactor = 0.05; 
+            const k = 0.01 * (frequency / 200) * 10; // Adjust for 3D scale
+
+            // The 'phase' variable is updated in the main draw() loop
+            // We use the same phase to sync. 
+            // 2D Phase speed was: phase += frequency * 0.00008
+            // We use the exact same global 'phase' variable.
+
+            for (let i = 0; i < initialParticlePositions.length; i++) {
+                const initX = initialParticlePositions[i].x;
+                
+                // Need to map 3D X coordinates to the phase logic
+                // x range is roughly -20 to 20
+                // Shift to positive for calculation if needed, or just use as is
+                
+                // Calculate Displacement
+                // k * x - phase
+                // x in 3D is different scale than canvas pixels. 
+                // Let's map it: 3D x * factor matches canvas x
+                
+                const angle = (initX + 20) * 2 * k - phase; // +20 to shift start
+                const waveVal = Math.sin(angle);
+                
+                // Displacement amount
+                const maxDisp = 3.0; // Max displacement in 3D units
+                const disp = waveVal * (amplitude * maxDisp);
+
+                // Update X position: Initial + Displacement
+                positions[i * 3] = initX + disp;
+            }
+            
+            particlesSystem.geometry.attributes.position.needsUpdate = true;
+            renderer.render(scene, camera);
+        }
+
 
         // --- Animation Loop ---
         let phase = 0;
@@ -397,12 +575,20 @@
             const k = 0.01 * (frequency / 200);
 
             if (isAnimating) {
-                // Increased speed as requested (0.00004 -> 0.00008)
+                // Main loop speed
                 phase += frequency * 0.00008;
             }
 
-            // --- Analytical Guide Line Calculation ---
-            // Replaced scanning method with exact analytical method for perfect centering
+            // 1. Update 3D
+            if (document.getElementById('threeContainer').offsetParent !== null) {
+                // Initialize if visible and not yet done
+                if (!isThreeInitialized && window.THREE) {
+                    initThree();
+                }
+                updateThree();
+            }
+
+            // 2. Analytical Guide Line Calculation (2D)
             const guideLines = [];
             if (showGuides) {
                 const width = waveCanvas ? waveCanvas.width : 600;
@@ -427,7 +613,7 @@
                 }
             }
 
-            // --- Draw Graph 1: Transverse Wave ---
+            // 3. Draw Graph 1: Transverse Wave
             if (waveCanvas) {
                 const ctx = waveCanvas.getContext('2d');
                 const width = waveCanvas.width;
@@ -435,7 +621,6 @@
                 
                 ctx.clearRect(0, 0, width, height);
                 
-                // Draw Axis
                 ctx.beginPath();
                 ctx.strokeStyle = '#e5e7eb';
                 ctx.lineWidth = 1;
@@ -443,7 +628,6 @@
                 ctx.lineTo(width, height / 2);
                 ctx.stroke();
 
-                // Draw Wave
                 ctx.beginPath();
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = '#4F46E5'; 
@@ -464,7 +648,6 @@
                 }
                 ctx.stroke();
 
-                // Draw Guide Lines on Wave Graph
                 if (showGuides) {
                     guideLines.forEach(line => {
                         ctx.save();
@@ -484,7 +667,6 @@
                         ctx.lineTo(line.x, height);
                         ctx.stroke();
                         
-                        // Label (Only for Mil/So, not Middle)
                         if (line.type !== 'middle') {
                             ctx.fillStyle = '#ffffff';
                             const textWidth = 14; 
@@ -500,7 +682,7 @@
                     });
                 }
 
-                // --- Draw Graph 2: Particle System (Longitudinal) ---
+                // 4. Draw Graph 2: Particle System (Longitudinal)
                 if (particleCanvas) {
                     const pCtx = particleCanvas.getContext('2d');
                     const pWidth = particleCanvas.width;
@@ -508,7 +690,6 @@
                     
                     pCtx.clearRect(0, 0, pWidth, pHeight);
 
-                    // Draw Guide Lines on Particle Graph
                     if (showGuides) {
                         guideLines.forEach(line => {
                             pCtx.save();
@@ -536,7 +717,6 @@
                     const spacingX = pWidth / cols;
                     const spacingY = pHeight / (rows + 1);
 
-                    // Target particle for velocity vector: Row 0 (Top), ~Center Column
                     const targetRow = 0; 
                     const targetCol = Math.floor(cols / 2);
 
@@ -554,7 +734,6 @@
                             
                             pCtx.fillStyle = (c % 2 === 0) ? '#10B981' : '#F59E0B'; 
 
-                            // Current Particle Position
                             const px = baseX + displacement;
                             const py = baseY;
 
@@ -562,11 +741,8 @@
                             pCtx.arc(px, py, 3, 0, Math.PI * 2);
                             pCtx.fill();
 
-                            // Draw Velocity Vector for specific particle
                             if (showVelocity && r === targetRow && c === targetCol) {
                                 const velFactor = getWaveVelocityFactor(waveType, angle);
-                                
-                                // Velocity scaling for visualization
                                 const velScale = 1.5 * Math.sqrt(frequency);
                                 const velVector = velFactor * amplitude * velScale;
 
@@ -575,13 +751,11 @@
                                 pCtx.fillStyle = '#E11D48';
                                 pCtx.lineWidth = 2;
 
-                                // Draw arrow shaft
                                 pCtx.beginPath();
                                 pCtx.moveTo(px, py - 12);
                                 pCtx.lineTo(px + velVector, py - 12);
                                 pCtx.stroke();
 
-                                // Draw arrow head
                                 if (Math.abs(velVector) > 2) {
                                     const headSize = 4;
                                     const dir = velVector > 0 ? 1 : -1;
@@ -594,10 +768,8 @@
                                     pCtx.lineTo(endX - headSize * dir, endY + headSize);
                                     pCtx.fill();
                                 }
-                                
                                 pCtx.restore();
                                 
-                                // Highlight the target particle
                                 pCtx.beginPath();
                                 pCtx.strokeStyle = '#E11D48';
                                 pCtx.lineWidth = 2;
@@ -608,7 +780,7 @@
                     }
                 }
 
-                // --- Draw Graph 3: Relative Velocity (Zoomed) ---
+                // 5. Draw Graph 3: Actual Velocity (Zoomed)
                 if (relativeCanvas) {
                     const rCtx = relativeCanvas.getContext('2d');
                     const rWidth = relativeCanvas.width;
@@ -616,7 +788,6 @@
                     
                     rCtx.clearRect(0, 0, rWidth, rHeight);
 
-                    // Background line for Equilibrium positions
                     rCtx.strokeStyle = '#e5e7eb';
                     rCtx.lineWidth = 2;
                     rCtx.beginPath();
@@ -624,88 +795,66 @@
                     rCtx.lineTo(rWidth, rHeight/2);
                     rCtx.stroke();
 
-                    // Calculate state for Target, Left, Right
                     const cols = Math.floor(particleCanvas.width / 15);
                     const targetCol = Math.floor(cols / 2);
                     const spacingX = particleCanvas.width / cols;
                     
-                    // Zoom factor
                     const zoom = 4.0;
-                    // const rSpacing = spacingX * zoom; // Unused
                     const centerX = rWidth / 2;
                     
-                    // Target Particle Index: c
-                    const idxs = [-1, 0, 1]; // Left, Target, Right relative index
+                    const idxs = [-1, 0, 1]; 
                     
-                    // Get Target Velocity to subtract (Frame of Reference)
                     const targetBaseX = targetCol * spacingX;
                     const targetAngle = targetBaseX * k - phase;
                     const targetVelFactor = getWaveVelocityFactor(waveType, targetAngle);
-                    const targetVel = targetVelFactor * amplitude; // Unscaled velocity value
+                    const targetVel = targetVelFactor * amplitude; 
 
                     idxs.forEach(i => {
                         const colIdx = targetCol + i;
                         const baseX = colIdx * spacingX;
                         const angle = baseX * k - phase;
                         
-                        // Displacement
                         const waveVal = getWaveY(waveType, angle);
                         const maxDisp = spacingX * 1.2;
                         const disp = waveVal * (amplitude * maxDisp);
                         
-                        // Velocity
                         const velFactor = getWaveVelocityFactor(waveType, angle);
                         const vel = velFactor * amplitude;
                         
-                        // Use Actual Velocity instead of Relative
-                        // const relVel = vel - targetVel; 
-                        
-                        // Position in Relative Frame (Still tracking the target visually)
-                        // We want to draw particles relative to the center particle's position
                         const targetActualX = targetBaseX + getWaveY(waveType, targetAngle) * (amplitude * maxDisp);
                         const currentActualX = baseX + disp;
                         
-                        // Relative position zoomed (Center particle is fixed at centerX)
                         const drawX = centerX + (currentActualX - targetActualX) * zoom;
                         const drawY = rHeight / 2;
                         
-                        // Draw Particle
                         rCtx.beginPath();
-                        rCtx.arc(drawX, drawY, 10, 0, Math.PI * 2); // Slightly larger for visibility
+                        rCtx.arc(drawX, drawY, 10, 0, Math.PI * 2); 
                         
                         if (i === 0) {
-                            rCtx.fillStyle = '#E11D48'; // Target: Red
+                            rCtx.fillStyle = '#E11D48'; 
                         } else {
-                            rCtx.fillStyle = '#F59E0B'; // Neighbors: Yellow
+                            rCtx.fillStyle = '#F59E0B'; 
                         }
                         rCtx.fill();
                         rCtx.strokeStyle = '#000';
                         rCtx.lineWidth = 1;
                         rCtx.stroke();
                         
-                        // Draw Actual Velocity Arrow
-                        // Draw for ALL particles including the center one
-                        
-                        // Scale velocity for visibility
                         const velScale = 150 * Math.sqrt(frequency/440); 
-                        const arrowLen = vel * velScale; // Use actual velocity 'vel'
+                        const arrowLen = vel * velScale; 
                         
-                        // Only draw if magnitude is significant
                         if (Math.abs(arrowLen) > 1) {
                             rCtx.save();
                             
-                            // 1. Color Selection (Distinct colors)
                             let arrowColor = '#4F46E5';
-                            if (i === -1) arrowColor = '#2563EB'; // Left: Blue
-                            else if (i === 0) arrowColor = '#E11D48'; // Center: Red
-                            else if (i === 1) arrowColor = '#059669'; // Right: Green
+                            if (i === -1) arrowColor = '#2563EB'; 
+                            else if (i === 0) arrowColor = '#E11D48'; 
+                            else if (i === 1) arrowColor = '#059669'; 
 
                             rCtx.strokeStyle = arrowColor;
                             rCtx.fillStyle = arrowColor;
                             rCtx.lineWidth = 3;
                             
-                            // 2. Y-Offset Selection (Staggered to avoid overlap)
-                            // Left: High, Center: Mid, Right: Low
                             let yOffset = -25;
                             if (i === -1) yOffset = -55;
                             else if (i === 0) yOffset = -40;
@@ -713,13 +862,11 @@
 
                             const arrowY = drawY + yOffset; 
                             
-                            // Shaft
                             rCtx.beginPath();
                             rCtx.moveTo(drawX, arrowY);
                             rCtx.lineTo(drawX + arrowLen, arrowY);
                             rCtx.stroke();
                             
-                            // Arrowhead
                             const headSize = 6;
                             const dir = arrowLen > 0 ? 1 : -1;
                             const endX = drawX + arrowLen;
@@ -733,9 +880,6 @@
                             rCtx.restore();
                         }
                         
-                        
-                        // Label
-                        // Color match with arrows
                         let labelColor = '#4b5563';
                         if (i === -1) labelColor = '#2563EB';
                         else if (i === 0) labelColor = '#E11D48';
