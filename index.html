@@ -492,15 +492,20 @@
             scene.add(particlesSystem);
 
             // Simple Orbit Controls (Manual implementation for lightness)
+            // Modified to support both Mouse and Touch
             let isDragging = false;
             let previousMousePosition = { x: 0, y: 0 };
             
+            // --- Mouse Events ---
             threeContainer.addEventListener('mousedown', (e) => {
                 isDragging = true;
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
             });
+            
             document.addEventListener('mouseup', () => {
                 isDragging = false;
             });
+            
             threeContainer.addEventListener('mousemove', (e) => {
                 if (isDragging) {
                     const deltaMove = {
@@ -509,9 +514,6 @@
                     };
 
                     const rotationSpeed = 0.005;
-                    const group = scene; 
-                    // Rotate the whole scene or camera orbit
-                    // Simply rotating the particle system for effect
                     particlesSystem.rotation.y += deltaMove.x * rotationSpeed;
                     particlesSystem.rotation.x += deltaMove.y * rotationSpeed;
                 }
@@ -520,6 +522,49 @@
                     y: e.offsetY
                 };
             });
+
+            // --- Touch Events (Added for Mobile) ---
+            threeContainer.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                const touch = e.touches[0];
+                const rect = threeContainer.getBoundingClientRect();
+                previousMousePosition = { 
+                    x: touch.clientX - rect.left, 
+                    y: touch.clientY - rect.top 
+                };
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            threeContainer.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const touch = e.touches[0];
+                    const rect = threeContainer.getBoundingClientRect();
+                    const currentX = touch.clientX - rect.left;
+                    const currentY = touch.clientY - rect.top;
+
+                    const deltaMove = {
+                        x: currentX - previousMousePosition.x,
+                        y: currentY - previousMousePosition.y
+                    };
+
+                    const rotationSpeed = 0.005;
+                    particlesSystem.rotation.y += deltaMove.x * rotationSpeed;
+                    particlesSystem.rotation.x += deltaMove.y * rotationSpeed;
+
+                    previousMousePosition = {
+                        x: currentX,
+                        y: currentY
+                    };
+
+                    // Prevent scrolling while rotating the 3D model
+                    if (e.cancelable) {
+                        e.preventDefault();
+                    }
+                }
+            }, { passive: false });
 
             isThreeInitialized = true;
         }
