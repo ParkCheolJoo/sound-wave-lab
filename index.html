@@ -387,6 +387,7 @@
 
             isAnimating = false;
             updateAnimButtonState();
+            // IMPORTANT: draw() is NOT called here to prevent duplicate loops
         }
 
         document.getElementById('btnVelZero').addEventListener('click', () => snapToPhase('velocityZero'));
@@ -394,9 +395,9 @@
 
         document.getElementById('btnStep').addEventListener('click', () => {
             phase += Math.PI / 25; 
-            if (!isAnimating) {
-                draw(); // Update both 2D and 3D
-            }
+            // IMPORTANT: draw() is NOT called here manually.
+            // The main animation loop runs continuously (via requestAnimationFrame)
+            // even if 'isAnimating' is false, so it will pick up the phase change automatically.
         });
 
 
@@ -576,27 +577,10 @@
             const positions = particlesSystem.geometry.attributes.position.array;
             
             // Map Frequency to Wave Number k
-            // Visual scale factor to match 2D graph
-            const visualScaleFactor = 0.05; 
             const k = 0.01 * (frequency / 200) * 10; // Adjust for 3D scale
-
-            // The 'phase' variable is updated in the main draw() loop
-            // We use the same phase to sync. 
-            // 2D Phase speed was: phase += frequency * 0.00008
-            // We use the exact same global 'phase' variable.
 
             for (let i = 0; i < initialParticlePositions.length; i++) {
                 const initX = initialParticlePositions[i].x;
-                
-                // Need to map 3D X coordinates to the phase logic
-                // x range is roughly -20 to 20
-                // Shift to positive for calculation if needed, or just use as is
-                
-                // Calculate Displacement
-                // k * x - phase
-                // x in 3D is different scale than canvas pixels. 
-                // Let's map it: 3D x * factor matches canvas x
-                
                 const angle = (initX + 20) * 2 * k - phase; // +20 to shift start
                 const waveVal = Math.sin(angle);
                 
@@ -620,7 +604,7 @@
             const k = 0.01 * (frequency / 200);
 
             if (isAnimating) {
-                // Main loop speed
+                // Increased speed as requested (0.00004 -> 0.00008)
                 phase += frequency * 0.00008;
             }
 
