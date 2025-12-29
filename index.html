@@ -6,13 +6,16 @@
     <title>소리 파동 가상 실험실</title>
     <!-- PWA Manifest 연결 -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons UMD build for browser support -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* Mobile safe area for fixed bottom bar */
+        body { padding-bottom: 120px; }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans select-none">
-    <div class="flex flex-col items-center justify-center w-full min-h-screen p-4 md:p-6">
+    <div class="flex flex-col items-center justify-center w-full min-h-screen p-4 md:p-6 pb-40">
         <div class="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden">
             <!-- Header -->
             <div class="bg-indigo-600 p-6 text-white flex flex-col xl:flex-row justify-between items-center gap-6">
@@ -23,42 +26,25 @@
                     </h1>
                     <p class="text-indigo-200 mt-1">주파수, 진폭, 파형을 조절하며 소리를 눈으로 확인하세요.</p>
                 </div>
-
-                <div class="flex flex-col sm:flex-row gap-4 items-center bg-indigo-700/30 p-2 rounded-2xl">
-                    <!-- Visual Tools Group -->
-                    <div class="flex gap-2">
-                        <button id="guideBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-purple-400 hover:bg-purple-500 text-white text-sm whitespace-nowrap">
-                            <i data-lucide="scan-line" class="w-4 h-4 icon-guide"></i>
-                            <span id="guideBtnText">점선 보기</span>
-                        </button>
-                        <button id="velocityBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-pink-400 hover:bg-pink-500 text-white text-sm whitespace-nowrap">
-                            <i data-lucide="move-right" class="w-4 h-4 icon-velocity"></i>
-                            <span id="velocityBtnText">속도 화살표</span>
-                        </button>
-                    </div>
-
-                    <!-- Divider -->
-                    <div class="hidden sm:block w-px h-8 bg-indigo-400/50"></div>
-
-                    <!-- Control Group -->
-                    <div class="flex gap-2">
-                        <button id="animBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-sm whitespace-nowrap">
-                            <i data-lucide="pause" class="w-4 h-4 icon-anim"></i>
-                            <span id="animBtnText">정지</span>
-                        </button>
-                        <button id="playBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-green-400 hover:bg-green-500 text-indigo-900 text-sm whitespace-nowrap">
-                            <i data-lucide="play" class="w-4 h-4 icon-state"></i>
-                            <span id="playBtnText">소리 켜기</span>
-                        </button>
-                    </div>
+                
+                <!-- Visual Tools Group (Kept at Top) -->
+                <div class="flex gap-2 bg-indigo-700/30 p-2 rounded-2xl">
+                    <button id="guideBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-purple-400 hover:bg-purple-500 text-white text-sm whitespace-nowrap">
+                        <i data-lucide="scan-line" class="w-4 h-4 icon-guide"></i>
+                        <span id="guideBtnText">점선 보기</span>
+                    </button>
+                    <button id="velocityBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-pink-400 hover:bg-pink-500 text-white text-sm whitespace-nowrap">
+                        <i data-lucide="move-right" class="w-4 h-4 icon-velocity"></i>
+                        <span id="velocityBtnText">속도 화살표</span>
+                    </button>
                 </div>
             </div>
 
             <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-
+                
                 <!-- Controls Section -->
                 <div class="lg:col-span-1 space-y-8 bg-gray-50 p-6 rounded-xl border border-gray-200">
-
+                    
                     <!-- Frequency Control -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
@@ -96,29 +82,11 @@
                             진폭이 클수록 <strong>큰 소리</strong>가 나고, 파동의 높이가 높아집니다.
                         </p>
                     </div>
-
-                    <!-- Wave Type Control -->
-                    <div class="space-y-3">
-                        <label class="text-gray-700 font-bold flex items-center gap-2 whitespace-nowrap">
-                            <i data-lucide="zap" class="w-4 h-4 text-yellow-600"></i>
-                            파형 (음색)
-                        </label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2" id="waveTypeContainer">
-                            <button data-type="sine" class="wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-indigo-600 text-white border-indigo-600 whitespace-nowrap">사인파 (Sine)</button>
-                            <button data-type="square" class="wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-white text-gray-600 border-gray-300 hover:bg-gray-50 whitespace-nowrap">사각형파 (Square)</button>
-                            <button data-type="sawtooth" class="wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-white text-gray-600 border-gray-300 hover:bg-gray-50 whitespace-nowrap">톱니파 (Saw)</button>
-                            <button data-type="triangle" class="wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-white text-gray-600 border-gray-300 hover:bg-gray-50 whitespace-nowrap">삼각파 (Triangle)</button>
-                        </div>
-                        <p class="text-xs text-gray-500">
-                            파형의 모양이 달라지면 소리의 <strong>맵시(음색)</strong>가 변합니다.
-                        </p>
-                    </div>
-
                 </div>
 
                 <!-- Visualization Section -->
                 <div class="lg:col-span-2 space-y-6">
-
+                    
                     <!-- Graph 1: Displacement-Time -->
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 relative group">
                         <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 border border-gray-200 shadow-sm z-10">
@@ -129,12 +97,24 @@
 
                     <!-- Graph 2: Particle Model -->
                     <div class="bg-gray-900 rounded-xl border border-gray-800 shadow-sm p-4 relative">
+                        <!-- Label -->
                         <div class="mb-2 inline-block bg-gray-800/90 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-gray-300 border border-gray-700 shadow-sm">
                             입자 모형 (종파 - 실제 소리의 전달)
                         </div>
                         <canvas id="particleCanvas" class="w-full h-[150px] bg-transparent rounded-lg"></canvas>
                         <div class="mt-2 text-xs text-gray-400 text-center">
                             * 소리는 공기 입자가 빽빽해졌다(밀) 듬성해졌다(소) 하며 전달됩니다.
+                        </div>
+                    </div>
+
+                    <!-- Graph 3: Relative Velocity (New) -->
+                    <div class="bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm p-4 relative">
+                        <div class="mb-2 inline-block bg-indigo-100/90 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-800 border border-indigo-200 shadow-sm">
+                            입자 확대 및 실제 속도 (기준 입자 추적)
+                        </div>
+                        <canvas id="relativeCanvas" class="w-full h-[150px] bg-transparent rounded-lg"></canvas>
+                        <div class="mt-2 text-xs text-indigo-600 text-center">
+                            * 가운데 붉은 입자를 따라가며, 세 입자의 <strong>실제 속도</strong>를 화살표로 보여줍니다.
                         </div>
                     </div>
 
@@ -146,14 +126,42 @@
                             <ul class="list-disc pl-4 space-y-1">
                                 <li><strong>주파수(Hz)</strong>를 높이면 그래프의 파동 간격이 좁아지고 음이 높아집니다.</li>
                                 <li><strong>진폭</strong>을 높이면 그래프의 위아래 높이가 커지고 소리가 커집니다.</li>
-                                <li><strong>점선 보기</strong>를 켜면 횡파의 진폭이 0인 지점이 종파의 <span class="text-red-500 font-bold">밀(빽빽함)</span>과 <span class="text-blue-500 font-bold">소(듬성함)</span>로 연결되는 것을 볼 수 있습니다.</li>
-                                <li><strong>속도 화살표</strong>를 켜면 첫 번째 줄 특정 입자의 순간 속도를 붉은색 화살표로 확인할 수 있습니다.</li>
+                                <li><strong>점선 보기</strong>를 켜면 <span class="text-red-500 font-bold">밀</span>, <span class="text-blue-500 font-bold">소</span> 위치와 그 <span class="text-gray-500 font-bold">중간 지점</span>을 확인할 수 있습니다.</li>
+                                <li>하단의 <strong>컨트롤 패널</strong>을 이용해 입자의 속도가 0이 되는 지점(변위 최대)과 최대가 되는 지점(변위 0)을 멈춰서 확인해보세요.</li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Floating Control Dock (Sticky Bottom) -->
+    <div id="controlDock" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-2xl border border-indigo-100 flex flex-wrap gap-2 justify-center w-[95%] max-w-4xl ring-1 ring-black/5">
+        <!-- Physics Observation Buttons -->
+        <button id="btnVelZero" class="flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow bg-blue-500 hover:bg-blue-600 text-white text-xs whitespace-nowrap">
+            <span>속도 0<br>(변위 최대)</span>
+        </button>
+        <button id="btnVelMax" class="flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow bg-blue-500 hover:bg-blue-600 text-white text-xs whitespace-nowrap">
+            <span>속도 최대<br>(변위 0)</span>
+        </button>
+
+        <button id="btnStep" class="flex items-center gap-2 px-3 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow bg-blue-500 hover:bg-blue-600 text-white text-xs whitespace-nowrap">
+            <span>1/50 주기<br>이동</span>
+        </button>
+
+        <!-- Divider -->
+        <div class="w-px h-auto bg-gray-300 mx-1"></div>
+
+        <!-- Playback Controls -->
+        <button id="animBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-sm whitespace-nowrap">
+            <i data-lucide="pause" class="w-4 h-4 icon-anim"></i>
+            <span>정지</span>
+        </button>
+        <button id="playBtn" class="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow bg-green-400 hover:bg-green-500 text-indigo-900 text-sm whitespace-nowrap">
+            <i data-lucide="play" class="w-4 h-4 icon-state"></i>
+            <span>소리 켜기</span>
+        </button>
     </div>
 
     <script>
@@ -164,9 +172,9 @@
         let showVelocity = false; 
         let frequency = 440;
         let amplitude = 0.5;
-        let waveType = 'sine';
+        const waveType = 'sine'; // Fixed to sine as requested
         let animationId;
-
+        
         // Audio Context
         let audioContext = null;
         let oscillator = null;
@@ -174,41 +182,33 @@
 
         // --- DOM Elements ---
         const playBtn = document.getElementById('playBtn');
-        const playBtnText = document.getElementById('playBtnText');
-        const playBtnIcon = playBtn.querySelector('.icon-state');
-
         const animBtn = document.getElementById('animBtn');
-        const animBtnText = document.getElementById('animBtnText');
-        const animBtnIcon = animBtn.querySelector('.icon-anim');
-
         const guideBtn = document.getElementById('guideBtn');
         const guideBtnText = document.getElementById('guideBtnText');
-        const guideBtnIcon = guideBtn.querySelector('.icon-guide');
-
         const velocityBtn = document.getElementById('velocityBtn');
         const velocityBtnText = document.getElementById('velocityBtnText');
-
         const freqInput = document.getElementById('freqInput');
         const freqValue = document.getElementById('freqValue');
-
         const ampInput = document.getElementById('ampInput');
         const ampValue = document.getElementById('ampValue');
-
         const waveCanvas = document.getElementById('waveCanvas');
         const particleCanvas = document.getElementById('particleCanvas');
-
-        const waveBtns = document.querySelectorAll('.wave-btn');
-
+        const relativeCanvas = document.getElementById('relativeCanvas'); // New
+        
         // --- Resize Handling ---
         function resizeCanvas() {
             const waveContainer = waveCanvas.parentElement;
             const particleContainer = particleCanvas.parentElement;
-
+            const relativeContainer = relativeCanvas.parentElement;
+            
             waveCanvas.width = waveContainer.clientWidth;
-            waveCanvas.height = 250; // Fixed height
-
+            waveCanvas.height = 250; 
+            
             particleCanvas.width = particleContainer.clientWidth;
-            particleCanvas.height = 150; // Fixed height
+            particleCanvas.height = 150; 
+
+            relativeCanvas.width = relativeContainer.clientWidth;
+            relativeCanvas.height = 150;
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
@@ -221,21 +221,10 @@
 
             if (oscillator && audioContext) {
                 oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-                oscillator.type = waveType;
             }
             if (gainNode && audioContext) {
                 gainNode.gain.setTargetAtTime(amplitude, audioContext.currentTime, 0.02);
             }
-        }
-
-        function updateWaveBtns() {
-            waveBtns.forEach(btn => {
-                if (btn.dataset.type === waveType) {
-                    btn.className = 'wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-indigo-600 text-white border-indigo-600 font-bold shadow-sm whitespace-nowrap';
-                } else {
-                    btn.className = 'wave-btn px-3 py-2 text-sm rounded-lg border transition-colors bg-white text-gray-600 border-gray-300 hover:bg-gray-50 hover:text-indigo-600 whitespace-nowrap';
-                }
-            });
         }
 
         // --- Audio Functions ---
@@ -269,47 +258,54 @@
                 const currentTime = audioContext.currentTime;
                 gainNode.gain.linearRampToValueAtTime(0, currentTime + 0.05);
                 oscillator.stop(currentTime + 0.05);
-
+                
                 setTimeout(() => {
                     if (oscillator) oscillator.disconnect();
                     if (gainNode) gainNode.disconnect();
                     oscillator = null;
                 }, 100);
             }
-
+            
             isPlaying = false;
             updatePlayButton();
         }
 
         function togglePlay() {
-            if (isPlaying) stopSound();
-            else startSound();
+            if (isPlaying) {
+                stopSound();
+            } else {
+                startSound();
+            }
         }
 
         function updatePlayButton() {
-            if (isPlaying) {
-                playBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-red-500 hover:bg-red-600 text-white text-sm whitespace-nowrap';
-                playBtnText.innerText = '소리 끄기';
-                playBtnIcon.setAttribute('data-lucide', 'volume-x');
-            } else {
-                playBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-green-400 hover:bg-green-500 text-indigo-900 text-sm whitespace-nowrap';
-                playBtnText.innerText = '소리 켜기';
-                playBtnIcon.setAttribute('data-lucide', 'play');
-            }
+            const iconName = isPlaying ? 'volume-x' : 'play';
+            const text = isPlaying ? '소리 끄기' : '소리 켜기';
+            const classes = isPlaying 
+                ? 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-red-500 hover:bg-red-600 text-white text-sm whitespace-nowrap'
+                : 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-green-400 hover:bg-green-500 text-indigo-900 text-sm whitespace-nowrap';
+            
+            playBtn.className = classes;
+            playBtn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4"></i><span>${text}</span>`;
+            
             if (window.lucide) lucide.createIcons();
         }
 
         function toggleAnimation() {
             isAnimating = !isAnimating;
-            if (isAnimating) {
-                animBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-sm whitespace-nowrap';
-                animBtnText.innerText = '정지';
-                animBtnIcon.setAttribute('data-lucide', 'pause');
-            } else {
-                animBtn.className = 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-blue-400 hover:bg-blue-500 text-white text-sm whitespace-nowrap';
-                animBtnText.innerText = '재생';
-                animBtnIcon.setAttribute('data-lucide', 'play');
-            }
+            updateAnimButtonState();
+        }
+
+        function updateAnimButtonState() {
+            const iconName = isAnimating ? 'pause' : 'play';
+            const text = isAnimating ? '정지' : '재생';
+            const classes = isAnimating
+                ? 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-yellow-400 hover:bg-yellow-500 text-yellow-900 text-sm whitespace-nowrap'
+                : 'flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg bg-blue-400 hover:bg-blue-500 text-white text-sm whitespace-nowrap';
+
+            animBtn.className = classes;
+            animBtn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4"></i><span>${text}</span>`;
+            
             if (window.lucide) lucide.createIcons();
         }
 
@@ -335,29 +331,63 @@
             }
         }
 
-        function getWaveY(waveType, angle) { 
-             if (waveType === 'sine') return Math.sin(angle);
-             if (waveType === 'square') return Math.sin(angle) > 0 ? 1 : -1;
-             if (waveType === 'sawtooth') {
-                const period = 2 * Math.PI;
-                return ((angle % period + period) % period) / period * 2 - 1;
-             }
-             if (waveType === 'triangle') {
-                const period = 2 * Math.PI;
-                return Math.abs(((angle % period + period) % period) / period * 2 - 1) * 2 - 1;
-             }
-             return 0;
+        // --- New Physics Observation Buttons Logic ---
+        function snapToPhase(targetType) {
+            // Target the specific particle that shows the arrow (Row 0, Col ~Middle)
+            const width = particleCanvas.width;
+            const cols = Math.floor(width / 15);
+            const targetCol = Math.floor(cols / 2);
+            const spacingX = width / cols;
+            // The particle's base position x
+            const targetX = targetCol * spacingX;
+            
+            const k = 0.01 * (frequency / 200);
+            
+            // Formula: y = sin(kx - phase)
+            // velocity ~ -cos(kx - phase)
+            // angle = kx - phase
+            
+            if (targetType === 'velocityZero') {
+                // Velocity 0 means Displacement Max or Min
+                // cos(angle) = 0 => angle = PI/2 or 3PI/2
+                // kx - phase = PI/2
+                // phase = kx - PI/2
+                phase = targetX * k - Math.PI / 2;
+            } else if (targetType === 'velocityMax') {
+                // Velocity Max means Displacement 0
+                // cos(angle) = 1 or -1 => angle = 0 or PI
+                // kx - phase = 0
+                // phase = kx
+                phase = targetX * k;
+            }
+
+            isAnimating = false;
+            updateAnimButtonState();
+            // REMOVED draw(); -> The main loop is always running, so updating 'phase' is enough.
+            // Calling draw() here creates a duplicate animation loop, doubling the speed.
         }
 
-        function getWaveVelocityFactor(waveType, angle) {
-            const twoPi = 2 * Math.PI;
-            const normAngle = (angle % twoPi + twoPi) % twoPi;
+        document.getElementById('btnVelZero').addEventListener('click', () => snapToPhase('velocityZero'));
+        document.getElementById('btnVelMax').addEventListener('click', () => snapToPhase('velocityMax'));
 
-            if (waveType === 'sine') return -Math.cos(angle);
-            if (waveType === 'triangle') return (normAngle < Math.PI) ? (2 / Math.PI) : (-2 / Math.PI);
-            if (waveType === 'sawtooth') return -1 / Math.PI;
-            if (waveType === 'square') return 0;
-            return 0;
+        document.getElementById('btnStep').addEventListener('click', () => {
+            // Modified: Just update phase. Do not toggle animation state or call draw().
+            // If playing, it skips a bit. If paused, it steps forward.
+            phase += Math.PI / 25; // 2 * PI / 50 = 1/50 period
+            
+            // REMOVED: if (!isAnimating) { draw(); } 
+            // The draw loop runs continuously regardless of isAnimating flag.
+        });
+
+
+        // --- Helper Function for Wave Calculation ---
+        function getWaveY(waveType, angle) { 
+             return Math.sin(angle); // Always sine
+        }
+
+        // Calculate velocity factor proportional to -d(Displacement)/d(angle)
+        function getWaveVelocityFactor(waveType, angle) {
+            return -Math.cos(angle); // Always sine derivative
         }
 
         // --- Animation Loop ---
@@ -365,150 +395,361 @@
 
         function draw() {
             const k = 0.01 * (frequency / 200);
-            if (isAnimating) phase += frequency * 0.00005;
 
-            // --- Draw Graph 1: Transverse Wave ---
-            const ctx = waveCanvas.getContext('2d');
-            const width = waveCanvas.width;
-            const height = waveCanvas.height;
-            ctx.clearRect(0, 0, width, height);
+            if (isAnimating) {
+                // Increased speed as requested (0.00004 -> 0.00008)
+                phase += frequency * 0.00008;
+            }
 
-            ctx.beginPath();
-            ctx.strokeStyle = '#e5e7eb';
-            ctx.lineWidth = 1;
-            ctx.moveTo(0, height / 2);
-            ctx.lineTo(width, height / 2);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#4F46E5'; 
-
-            const visualAmp = (amplitude * height) / 2.2; 
-            const step = 2;
-
+            // --- Analytical Guide Line Calculation ---
+            // Replaced scanning method with exact analytical method for perfect centering
             const guideLines = [];
-            let prevY = getWaveY(waveType, -phase) * visualAmp;
+            if (showGuides) {
+                const width = waveCanvas ? waveCanvas.width : 600;
+                
+                const stepAngle = Math.PI / 2;
+                const minArg = -phase;
+                const maxArg = width * k - phase;
+                
+                const mMin = Math.ceil(minArg / stepAngle);
+                const mMax = Math.floor(maxArg / stepAngle);
 
-            for (let x = 0; x <= width; x += step) {
-                const angle = x * k - phase;
-                const y = getWaveY(waveType, angle) * visualAmp;
+                for (let m = mMin; m <= mMax; m++) {
+                    const x = (m * stepAngle + phase) / k;
+                    const mod = (m % 4 + 4) % 4; 
+                    
+                    let type = '';
+                    if (mod === 0) type = 'rarefaction';
+                    else if (mod === 2) type = 'compression';
+                    else type = 'middle';
 
-                if (x === 0) ctx.moveTo(x, height / 2 - y);
-                else ctx.lineTo(x, height / 2 - y);
-
-                if (showGuides && prevY * y <= 0 && Math.abs(prevY - y) < visualAmp) {
-                    const slope = y - prevY;
-                    const type = slope < 0 ? 'compression' : 'rarefaction';
                     guideLines.push({ x: x, type: type });
                 }
-                prevY = y;
-            }
-            ctx.stroke();
-
-            if (showGuides) {
-                ctx.save();
-                ctx.setLineDash([4, 4]);
-                ctx.lineWidth = 1.5; 
-                guideLines.forEach(line => {
-                    ctx.beginPath();
-                    ctx.strokeStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(59, 130, 246, 0.6)'; 
-                    ctx.moveTo(line.x, 0);
-                    ctx.lineTo(line.x, height);
-                    ctx.stroke();
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(line.x - 7, 4, 14, 14);
-
-                    ctx.fillStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 1)' : 'rgba(59, 130, 246, 1)'; 
-                    ctx.font = '10px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(line.type === 'compression' ? '밀' : '소', line.x, 15);
-                });
-                ctx.restore();
             }
 
-            // --- Draw Graph 2: Particle System (Longitudinal) ---
-            const pCtx = particleCanvas.getContext('2d');
-            const pWidth = particleCanvas.width;
-            const pHeight = particleCanvas.height;
-            pCtx.clearRect(0, 0, pWidth, pHeight);
+            // --- Draw Graph 1: Transverse Wave ---
+            if (waveCanvas) {
+                const ctx = waveCanvas.getContext('2d');
+                const width = waveCanvas.width;
+                const height = waveCanvas.height;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                // Draw Axis
+                ctx.beginPath();
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.moveTo(0, height / 2);
+                ctx.lineTo(width, height / 2);
+                ctx.stroke();
 
-            if (showGuides) {
-                pCtx.save();
-                pCtx.setLineDash([4, 4]);
-                pCtx.lineWidth = 1.5;
-                guideLines.forEach(line => {
-                    pCtx.beginPath();
-                    pCtx.strokeStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)';
-                    pCtx.moveTo(line.x, 0);
-                    pCtx.lineTo(line.x, pHeight);
-                    pCtx.stroke();
-                });
-                pCtx.restore();
-            }
+                // Draw Wave
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#4F46E5'; 
+                
+                const visualAmp = (amplitude * height) / 2.2; 
+                const step = 2;
+                
+                let prevY = getWaveY(waveType, -phase) * visualAmp;
+                
+                ctx.moveTo(0, height / 2 - prevY);
+                
+                for (let x = 0; x <= width; x += step) {
+                    const angle = x * k - phase;
+                    const y = getWaveY(waveType, angle) * visualAmp;
+                    
+                    if (x > 0) ctx.lineTo(x, height / 2 - y);
+                    prevY = y;
+                }
+                ctx.stroke();
 
-            const rows = 5;
-            const cols = Math.floor(pWidth / 15);
-            const spacingX = pWidth / cols;
-            const spacingY = pHeight / (rows + 1);
-
-            const targetRow = 0; 
-            const targetCol = Math.floor(cols / 2);
-
-            for (let r = 0; r < rows; r++) {
-                for (let c = 0; c <= cols; c++) {
-                    const baseX = c * spacingX;
-                    const baseY = (r + 1) * spacingY;
-
-                    const maxDisplacement = spacingX * 1.2;
-                    const angle = baseX * k - phase;
-                    const waveVal = getWaveY(waveType, angle);
-                    const displacement = waveVal * (amplitude * maxDisplacement);
-
-                    pCtx.fillStyle = (c % 2 === 0) ? '#10B981' : '#F59E0B'; 
-                    const px = baseX + displacement;
-                    const py = baseY;
-
-                    pCtx.beginPath();
-                    pCtx.arc(px, py, 3, 0, Math.PI * 2);
-                    pCtx.fill();
-
-                    if (showVelocity && r === targetRow && c === targetCol) {
-                        const velFactor = getWaveVelocityFactor(waveType, angle);
-                        const velScale = 1.5 * Math.sqrt(frequency);
-                        const velVector = velFactor * amplitude * velScale;
-
-                        pCtx.save();
-                        pCtx.strokeStyle = '#E11D48';
-                        pCtx.fillStyle = '#E11D48';
-                        pCtx.lineWidth = 2;
-
-                        pCtx.beginPath();
-                        pCtx.moveTo(px, py - 12);
-                        pCtx.lineTo(px + velVector, py - 12);
-                        pCtx.stroke();
-
-                        if (Math.abs(velVector) > 2) {
-                            const headSize = 4;
-                            const dir = velVector > 0 ? 1 : -1;
-                            const endX = px + velVector;
-                            const endY = py - 12;
-                            pCtx.beginPath();
-                            pCtx.moveTo(endX, endY);
-                            pCtx.lineTo(endX - headSize * dir, endY - headSize);
-                            pCtx.lineTo(endX - headSize * dir, endY + headSize);
-                            pCtx.fill();
+                // Draw Guide Lines on Wave Graph
+                if (showGuides) {
+                    guideLines.forEach(line => {
+                        ctx.save();
+                        ctx.beginPath();
+                        
+                        if (line.type === 'middle') {
+                            ctx.setLineDash([2, 4]);
+                            ctx.strokeStyle = 'rgba(156, 163, 175, 0.6)'; 
+                            ctx.lineWidth = 1;
+                        } else {
+                            ctx.setLineDash([4, 4]);
+                            ctx.lineWidth = 1.5;
+                            ctx.strokeStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(59, 130, 246, 0.6)'; 
                         }
+                        
+                        ctx.moveTo(line.x, 0);
+                        ctx.lineTo(line.x, height);
+                        ctx.stroke();
+                        
+                        // Label (Only for Mil/So, not Middle)
+                        if (line.type !== 'middle') {
+                            ctx.fillStyle = '#ffffff';
+                            const textWidth = 14; 
+                            const textHeight = 14;
+                            ctx.fillRect(line.x - textWidth/2, 15 - textHeight + 3, textWidth, textHeight);
 
-                        pCtx.restore();
+                            ctx.fillStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 1)' : 'rgba(59, 130, 246, 1)'; 
+                            ctx.font = '10px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(line.type === 'compression' ? '밀' : '소', line.x, 15);
+                        }
+                        ctx.restore();
+                    });
+                }
 
-                        pCtx.beginPath();
-                        pCtx.strokeStyle = '#E11D48';
-                        pCtx.lineWidth = 2;
-                        pCtx.arc(px, py, 5, 0, Math.PI * 2);
-                        pCtx.stroke();
+                // --- Draw Graph 2: Particle System (Longitudinal) ---
+                if (particleCanvas) {
+                    const pCtx = particleCanvas.getContext('2d');
+                    const pWidth = particleCanvas.width;
+                    const pHeight = particleCanvas.height;
+                    
+                    pCtx.clearRect(0, 0, pWidth, pHeight);
+
+                    // Draw Guide Lines on Particle Graph
+                    if (showGuides) {
+                        guideLines.forEach(line => {
+                            pCtx.save();
+                            pCtx.beginPath();
+                            
+                            if (line.type === 'middle') {
+                                pCtx.setLineDash([2, 4]);
+                                pCtx.strokeStyle = 'rgba(156, 163, 175, 0.4)'; 
+                                pCtx.lineWidth = 1;
+                            } else {
+                                pCtx.setLineDash([4, 4]);
+                                pCtx.lineWidth = 1.5;
+                                pCtx.strokeStyle = line.type === 'compression' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+                            }
+                            
+                            pCtx.moveTo(line.x, 0);
+                            pCtx.lineTo(line.x, pHeight);
+                            pCtx.stroke();
+                            pCtx.restore();
+                        });
                     }
+
+                    const rows = 5;
+                    const cols = Math.floor(pWidth / 15); 
+                    const spacingX = pWidth / cols;
+                    const spacingY = pHeight / (rows + 1);
+
+                    // Target particle for velocity vector: Row 0 (Top), ~Center Column
+                    const targetRow = 0; 
+                    const targetCol = Math.floor(cols / 2);
+
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c <= cols; c++) {
+                            const baseX = c * spacingX; 
+                            const baseY = (r + 1) * spacingY;
+
+                            const maxDisplacement = spacingX * 1.2; 
+                            
+                            const angle = baseX * k - phase;
+                            const waveVal = getWaveY(waveType, angle);
+                            
+                            const displacement = waveVal * (amplitude * maxDisplacement);
+                            
+                            pCtx.fillStyle = (c % 2 === 0) ? '#10B981' : '#F59E0B'; 
+
+                            // Current Particle Position
+                            const px = baseX + displacement;
+                            const py = baseY;
+
+                            pCtx.beginPath();
+                            pCtx.arc(px, py, 3, 0, Math.PI * 2);
+                            pCtx.fill();
+
+                            // Draw Velocity Vector for specific particle
+                            if (showVelocity && r === targetRow && c === targetCol) {
+                                const velFactor = getWaveVelocityFactor(waveType, angle);
+                                
+                                // Velocity scaling for visualization
+                                const velScale = 1.5 * Math.sqrt(frequency);
+                                const velVector = velFactor * amplitude * velScale;
+
+                                pCtx.save();
+                                pCtx.strokeStyle = '#E11D48';
+                                pCtx.fillStyle = '#E11D48';
+                                pCtx.lineWidth = 2;
+
+                                // Draw arrow shaft
+                                pCtx.beginPath();
+                                pCtx.moveTo(px, py - 12);
+                                pCtx.lineTo(px + velVector, py - 12);
+                                pCtx.stroke();
+
+                                // Draw arrow head
+                                if (Math.abs(velVector) > 2) {
+                                    const headSize = 4;
+                                    const dir = velVector > 0 ? 1 : -1;
+                                    const endX = px + velVector;
+                                    const endY = py - 12;
+                                    
+                                    pCtx.beginPath();
+                                    pCtx.moveTo(endX, endY);
+                                    pCtx.lineTo(endX - headSize * dir, endY - headSize);
+                                    pCtx.lineTo(endX - headSize * dir, endY + headSize);
+                                    pCtx.fill();
+                                }
+                                
+                                pCtx.restore();
+                                
+                                // Highlight the target particle
+                                pCtx.beginPath();
+                                pCtx.strokeStyle = '#E11D48';
+                                pCtx.lineWidth = 2;
+                                pCtx.arc(px, py, 5, 0, Math.PI * 2);
+                                pCtx.stroke();
+                            }
+                        }
+                    }
+                }
+
+                // --- Draw Graph 3: Relative Velocity (Zoomed) ---
+                if (relativeCanvas) {
+                    const rCtx = relativeCanvas.getContext('2d');
+                    const rWidth = relativeCanvas.width;
+                    const rHeight = relativeCanvas.height;
+                    
+                    rCtx.clearRect(0, 0, rWidth, rHeight);
+
+                    // Background line for Equilibrium positions
+                    rCtx.strokeStyle = '#e5e7eb';
+                    rCtx.lineWidth = 2;
+                    rCtx.beginPath();
+                    rCtx.moveTo(0, rHeight/2);
+                    rCtx.lineTo(rWidth, rHeight/2);
+                    rCtx.stroke();
+
+                    // Calculate state for Target, Left, Right
+                    const cols = Math.floor(particleCanvas.width / 15);
+                    const targetCol = Math.floor(cols / 2);
+                    const spacingX = particleCanvas.width / cols;
+                    
+                    // Zoom factor
+                    const zoom = 4.0;
+                    // const rSpacing = spacingX * zoom; // Unused
+                    const centerX = rWidth / 2;
+                    
+                    // Target Particle Index: c
+                    const idxs = [-1, 0, 1]; // Left, Target, Right relative index
+                    
+                    // Get Target Velocity to subtract (Frame of Reference)
+                    const targetBaseX = targetCol * spacingX;
+                    const targetAngle = targetBaseX * k - phase;
+                    const targetVelFactor = getWaveVelocityFactor(waveType, targetAngle);
+                    const targetVel = targetVelFactor * amplitude; // Unscaled velocity value
+
+                    idxs.forEach(i => {
+                        const colIdx = targetCol + i;
+                        const baseX = colIdx * spacingX;
+                        const angle = baseX * k - phase;
+                        
+                        // Displacement
+                        const waveVal = getWaveY(waveType, angle);
+                        const maxDisp = spacingX * 1.2;
+                        const disp = waveVal * (amplitude * maxDisp);
+                        
+                        // Velocity
+                        const velFactor = getWaveVelocityFactor(waveType, angle);
+                        const vel = velFactor * amplitude;
+                        
+                        // Use Actual Velocity instead of Relative
+                        // const relVel = vel - targetVel; 
+                        
+                        // Position in Relative Frame (Still tracking the target visually)
+                        // We want to draw particles relative to the center particle's position
+                        const targetActualX = targetBaseX + getWaveY(waveType, targetAngle) * (amplitude * maxDisp);
+                        const currentActualX = baseX + disp;
+                        
+                        // Relative position zoomed (Center particle is fixed at centerX)
+                        const drawX = centerX + (currentActualX - targetActualX) * zoom;
+                        const drawY = rHeight / 2;
+                        
+                        // Draw Particle
+                        rCtx.beginPath();
+                        rCtx.arc(drawX, drawY, 10, 0, Math.PI * 2); // Slightly larger for visibility
+                        
+                        if (i === 0) {
+                            rCtx.fillStyle = '#E11D48'; // Target: Red
+                        } else {
+                            rCtx.fillStyle = '#F59E0B'; // Neighbors: Yellow
+                        }
+                        rCtx.fill();
+                        rCtx.strokeStyle = '#000';
+                        rCtx.lineWidth = 1;
+                        rCtx.stroke();
+                        
+                        // Draw Actual Velocity Arrow
+                        // Draw for ALL particles including the center one
+                        
+                        // Scale velocity for visibility
+                        const velScale = 150 * Math.sqrt(frequency/440); 
+                        const arrowLen = vel * velScale; // Use actual velocity 'vel'
+                        
+                        // Only draw if magnitude is significant
+                        if (Math.abs(arrowLen) > 1) {
+                            rCtx.save();
+                            
+                            // 1. Color Selection (Distinct colors)
+                            let arrowColor = '#4F46E5';
+                            if (i === -1) arrowColor = '#2563EB'; // Left: Blue
+                            else if (i === 0) arrowColor = '#E11D48'; // Center: Red
+                            else if (i === 1) arrowColor = '#059669'; // Right: Green
+
+                            rCtx.strokeStyle = arrowColor;
+                            rCtx.fillStyle = arrowColor;
+                            rCtx.lineWidth = 3;
+                            
+                            // 2. Y-Offset Selection (Staggered to avoid overlap)
+                            // Left: High, Center: Mid, Right: Low
+                            let yOffset = -25;
+                            if (i === -1) yOffset = -55;
+                            else if (i === 0) yOffset = -40;
+                            else if (i === 1) yOffset = -25;
+
+                            const arrowY = drawY + yOffset; 
+                            
+                            // Shaft
+                            rCtx.beginPath();
+                            rCtx.moveTo(drawX, arrowY);
+                            rCtx.lineTo(drawX + arrowLen, arrowY);
+                            rCtx.stroke();
+                            
+                            // Arrowhead
+                            const headSize = 6;
+                            const dir = arrowLen > 0 ? 1 : -1;
+                            const endX = drawX + arrowLen;
+                            
+                            rCtx.beginPath();
+                            rCtx.moveTo(endX, arrowY);
+                            rCtx.lineTo(endX - headSize * dir, arrowY - headSize);
+                            rCtx.lineTo(endX - headSize * dir, arrowY + headSize);
+                            rCtx.fill();
+                            
+                            rCtx.restore();
+                        }
+                        
+                        
+                        // Label
+                        // Color match with arrows
+                        let labelColor = '#4b5563';
+                        if (i === -1) labelColor = '#2563EB';
+                        else if (i === 0) labelColor = '#E11D48';
+                        else if (i === 1) labelColor = '#059669';
+
+                        rCtx.fillStyle = labelColor;
+                        rCtx.font = 'bold 12px sans-serif';
+                        rCtx.textAlign = 'center';
+                        let label = "";
+                        if (i === -1) label = "왼쪽";
+                        if (i === 0) label = "나(추적)";
+                        if (i === 1) label = "오른쪽";
+                        rCtx.fillText(label, drawX, drawY + 30);
+                    });
                 }
             }
 
@@ -516,36 +757,29 @@
         }
 
         // --- Event Listeners ---
+
         playBtn.addEventListener('click', togglePlay);
         animBtn.addEventListener('click', toggleAnimation);
         guideBtn.addEventListener('click', toggleGuides);
         velocityBtn.addEventListener('click', toggleVelocity);
 
-        freqInput.addEventListener('input', (e) => { frequency = Number(e.target.value); updateUI(); });
-        ampInput.addEventListener('input', (e) => { amplitude = Number(e.target.value); updateUI(); });
-
-        waveBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                waveType = btn.dataset.type;
-                updateWaveBtns();
-                updateUI();
-            });
+        freqInput.addEventListener('input', (e) => {
+            frequency = Number(e.target.value);
+            updateUI();
         });
 
+        ampInput.addEventListener('input', (e) => {
+            amplitude = Number(e.target.value);
+            updateUI();
+        });
+
+        // --- Initialization ---
         window.onload = () => {
             if (window.lucide) lucide.createIcons();
             draw();
-            resizeCanvas();
+            resizeCanvas(); 
         };
-    </script>
 
-    <!-- Service Worker 등록 (PWA) -->
-    <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./sw.js").catch(console.error);
-        });
-      }
     </script>
 </body>
 </html>
